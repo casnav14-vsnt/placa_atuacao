@@ -3,30 +3,34 @@
 
 DualVNH5019MotorShield md;
 
-double rudderPosition, rudderCmd, throttleCmd, driverVel;
+double rudderPosition, rudderCmd, throttleCmd, rudderDriverVel;
 
 #define OUTPUT_MIN -400
 #define OUTPUT_MAX 400
-#define KP 1
-#define KI 0
+#define KP 7
+#define KI 0.005
 #define KD 0
 
-#define rudderCmd_MIN 1000
-#define rudderCmd_MAX 2000
+#define rudderCmd_MIN -100
+#define rudderCmd_MAX 100
 #define rudderPos_MIN -50
 #define rudderPos_MAX 50
 
-AutoPID rudderPID(&rudderPosition, &rudderCmd, &driverVel, OUTPUT_MIN, OUTPUT_MAX, KP, KI, KD);
+int throttleCounter;
 
-void setup() {
+AutoPID rudderPID(&rudderPosition, &rudderCmd, &rudderDriverVel, OUTPUT_MIN, OUTPUT_MAX, KP, KI, KD);
+
+void setup(){
   Serial.setTimeout(2);         // check if there is data available to read
   Serial.begin(115200);         // check if there is data available to read
   rudderPID.setTimeStep(200);   // check if there is data available to read
 }
 
-void loop() {
+void loop(){
   readSerialCmd();
   rudderPID.run();
+  limitDriverCmd(rudderDriverVel);
+  md.setM1Speed(rudderDriverVel);
 }
 
 void readSerialCmd(){
@@ -37,6 +41,7 @@ void readSerialCmd(){
     buffer[length] = '\0';                                                // terminate the string with a null character
     inputString = String(buffer);                                         // convert the buffer to a string
     parseCommand(inputString);
+    printData();
   }
 }
 
@@ -54,4 +59,17 @@ void parseCommand(String input){
        throttleCmd = cmd_value;
      }
   }
+}
+
+void printData(){
+  Serial.print("RUDDER POSITION IS: ");
+  Serial.println(rudderPosition, 2);
+  Serial.print("RUDDER COMMAND IS: ");
+  Serial.println(rudderCmd, 2);
+  Serial.print("RUDDER OUTPUT IS: ");
+  Serial.println(rudderDriverVel, 2);
+}
+
+double limitDriverCmd(double value){
+  return constrain(value, -400, 400);
 }
