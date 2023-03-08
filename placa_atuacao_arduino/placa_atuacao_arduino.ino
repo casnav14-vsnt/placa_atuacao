@@ -7,21 +7,23 @@ double rudderPosition, rudderCmd, throttleCmd, rudderDriverVel;
 
 #define OUTPUT_MIN -400
 #define OUTPUT_MAX 400
-#define KP 7
-#define KI 0.005
+#define KP 25
+#define KI 0.1
 #define KD 0
 
 #define rudderCmd_MIN -100
 #define rudderCmd_MAX 100
-#define rudderPos_MIN -50
-#define rudderPos_MAX 50
+#define rudderPos_MIN -30
+#define rudderPos_MAX 30
+
+#define reversed 0
 
 int throttleCounter;
 
 AutoPID rudderPID(&rudderPosition, &rudderCmd, &rudderDriverVel, OUTPUT_MIN, OUTPUT_MAX, KP, KI, KD);
 
 void setup(){
-  Serial.setTimeout(2);         // check if there is data available to read
+  Serial.setTimeout(10);         // check if there is data available to read
   Serial.begin(115200);         // check if there is data available to read
   rudderPID.setTimeStep(200);   // check if there is data available to read
 }
@@ -71,5 +73,5 @@ void printData(){
 }
 
 double limitDriverCmd(double value){
-  return constrain(value, -400, 400);
+  return constrain(value, OUTPUT_MIN, OUTPUT_MAX);
 }
