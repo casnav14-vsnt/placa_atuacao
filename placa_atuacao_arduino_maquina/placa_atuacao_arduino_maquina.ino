@@ -5,8 +5,8 @@ DualVNH5019MotorShield md;
 
 double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd, throttleDriverVel;
 
-#define OUTPUT_MIN -400
-#define OUTPUT_MAX 400
+#define OUTPUT_MIN -100
+#define OUTPUT_MAX 100
 #define KP 25
 #define KI 0.1
 #define KD 0
@@ -34,8 +34,16 @@ double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd
 int throttleCounter;
 int throttlePin = A0;
 
+int throttleRange[4] = {0, 50, 75, 100};
+int throttleRangePot[4] = {0, 150, 500, 900};
+
 AutoPID rudderPID(&rudderPosition, &rudderCmd, &rudderDriverVel, OUTPUT_MIN, OUTPUT_MAX, KP, KI, KD);
 AutoPID throttlePID(&throttlePosition, &throttleCmd, &throttleDriverVel, OUTPUT_MIN_throttle, OUTPUT_MAX_throttle, KP_throttle, KI_throttle, KD_throttle);
+
+// 0 - 0
+// 50 - 150
+// 75 - 500
+// 100 - 900
 
 void setup(){
   Serial.setTimeout(10);         // check if there is data available to read
@@ -53,7 +61,12 @@ void loop(){
 
   int throttleAnalog = analogRead(throttlePin);
   // TODO: maybe that should be a nonlinear mapping!
-  throttlePosition = map(throttleAnalog, throttleAnalog_MIN, throttleAnalog_MAX, throttlePos_MIN, throttlePos_MAX);
+  for(int i = 0; i < 3; i++){
+    if (throttleAnalog > throttleRangePot[i] && throttleAnalog < throttleRangePot[i+1]){
+      throttlePosition = (double)map(throttleAnalog, throttleRangePot[i], throttleRangePot[i+1], throttleRange[i], throttleRange[i+1]);    
+    }
+  }
+  Serial.print(throttlePosition);
 
   throttlePID.run();
 
