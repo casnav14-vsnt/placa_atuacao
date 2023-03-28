@@ -5,8 +5,8 @@ DualVNH5019MotorShield md;
 
 double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd, throttleDriverVel;
 
-#define OUTPUT_MIN -100
-#define OUTPUT_MAX 100
+#define OUTPUT_MIN -120
+#define OUTPUT_MAX 120
 #define KP 25
 #define KI 0.1
 #define KD 0
@@ -20,8 +20,8 @@ double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd
 
 #define OUTPUT_MIN_throttle -400
 #define OUTPUT_MAX_throttle 400
-#define KP_throttle 25
-#define KI_throttle 0.1
+#define KP_throttle 10
+#define KI_throttle 0.05
 #define KD_throttle 0
 
 #define throttleCmd_MIN 0
@@ -32,7 +32,7 @@ double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd
 #define throttleAnalog_MAX 1023
 
 int throttleCounter;
-int throttlePin = A0;
+int throttlePin = A9;
 
 int throttleRange[4] = {0, 50, 75, 100};
 int throttleRangePot[4] = {0, 150, 500, 900};
@@ -60,18 +60,16 @@ void loop(){
   md.setM1Speed(rudderDriverVel);
 
   int throttleAnalog = analogRead(throttlePin);
-  // TODO: maybe that should be a nonlinear mapping!
   for(int i = 0; i < 3; i++){
     if (throttleAnalog > throttleRangePot[i] && throttleAnalog < throttleRangePot[i+1]){
       throttlePosition = (double)map(throttleAnalog, throttleRangePot[i], throttleRangePot[i+1], throttleRange[i], throttleRange[i+1]);    
     }
   }
-  Serial.print(throttlePosition);
 
   throttlePID.run();
-
-  limitDriverCmd(throttleDriverVel);
-  md.setM2Speed(throttleDriverVel);
+  limitDriverCmd(-throttleDriverVel);
+  printData_throttle();
+  // md.setM2Speed(-throttleDriverVel);
 }
 
 void readSerialCmd(){
@@ -109,6 +107,15 @@ void printData(){
   Serial.println(rudderCmd, 2);
   Serial.print("RUDDER OUTPUT IS: ");
   Serial.println(rudderDriverVel, 2);
+}
+
+void printData_throttle(){
+  Serial.print("THROTTLE POSITION IS: ");
+  Serial.println(throttlePosition, 2);
+  Serial.print("THROTTLE COMMAND IS: ");
+  Serial.println(throttleCmd, 2);
+  Serial.print("THROTTLE OUTPUT IS: ");
+  Serial.println(throttleDriverVel, 2);
 }
 
 double limitDriverCmd(double value){
