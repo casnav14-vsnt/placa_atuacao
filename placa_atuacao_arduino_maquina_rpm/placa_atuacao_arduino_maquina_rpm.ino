@@ -5,8 +5,8 @@ DualVNH5019MotorShield md;
 
 double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd, throttleDriverVel;
 
-#define OUTPUT_MIN -120
-#define OUTPUT_MAX 120
+#define OUTPUT_MIN -400
+#define OUTPUT_MAX 400
 #define KP 25
 #define KI 0.1
 #define KD 0
@@ -18,8 +18,8 @@ double rudderPosition, rudderCmd, rudderDriverVel, throttlePosition, throttleCmd
 
 #define reversed 0
 
-#define OUTPUT_MIN_throttle -400
-#define OUTPUT_MAX_throttle 400
+#define OUTPUT_MIN_throttle -75
+#define OUTPUT_MAX_throttle 75
 #define KP_throttle 10
 #define KI_throttle 0.05
 #define KD_throttle 0
@@ -45,6 +45,13 @@ AutoPID throttlePID(&throttlePosition, &throttleCmd, &throttleDriverVel, OUTPUT_
 // 75 - 500
 // 100 - 900
 
+// puxar acelera
+// abrir freia
+// totalmente aberto - 0
+// totalmente puxado - 100
+// positivo acelera
+// negativo desacelera
+
 void setup(){
   Serial.setTimeout(10);         // check if there is data available to read
   Serial.begin(115200);         // check if there is data available to read
@@ -59,17 +66,10 @@ void loop(){
   limitDriverCmd(rudderDriverVel);
   md.setM1Speed(rudderDriverVel);
 
-  int throttleAnalog = analogRead(throttlePin);
-  for(int i = 0; i < 3; i++){
-    if (throttleAnalog > throttleRangePot[i] && throttleAnalog < throttleRangePot[i+1]){
-      throttlePosition = (double)map(throttleAnalog, throttleRangePot[i], throttleRangePot[i+1], throttleRange[i], throttleRange[i+1]);    
-    }
-  }
-
   throttlePID.run();
-  limitDriverCmd(-throttleDriverVel);
+  limitDriverCmd(throttleDriverVel);
   printData_throttle();
-  // md.setM2Speed(-throttleDriverVel);
+  md.setM2Speed(throttleDriverVel);
 }
 
 void readSerialCmd(){
@@ -80,7 +80,7 @@ void readSerialCmd(){
     buffer[length] = '\0';                                                // terminate the string with a null character
     inputString = String(buffer);                                         // convert the buffer to a string
     parseCommand(inputString);
-    printData();
+//    printData();
   }
 }
 
@@ -94,8 +94,12 @@ void parseCommand(String input){
        rudderPosition = cmd_value;
      } else if (cmd_code == "RC"){                    // desired rudder position (calculated by ardupilot)
        rudderCmd = map(cmd_value, rudderCmd_MIN, rudderCmd_MAX, rudderPos_MIN, rudderPos_MAX);
+//       Serial.print("RUDDER POSITION IS: ");
+//       Serial.println(rudderCmd);
      } else if (cmd_code == "TC"){                    // desired throttle percentage (calculated by ardupilot)
        throttleCmd = cmd_value;
+//       Serial.print("THROTTLE IS: ");
+//       Serial.println(throttleCmd);
      } else if (cmd_code = "TP"){
        throttlePosition = cmd_value;
      }
