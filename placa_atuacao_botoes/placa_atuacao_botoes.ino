@@ -34,24 +34,77 @@ AutoPID throttlePID(&throttlePosition, &throttleCmd, &throttleDriverVel, OUTPUT_
 // positivo acelera
 // negativo desacelera
 
+const int buttonAuto = 2;
+const int buttonFwd = 3;
+const int buttonBkd = 4;
+const int buttonLeft = 5;
+const int buttonRight = 6;
+
+int buttonAutoState; 
+int buttonFwdState;
+int buttonBkdState;
+int buttonLeftState;
+int buttonRightState;
+
 void setup(){
   Serial.setTimeout(10);           // control how fast data in serial port is checked
   Serial.begin(115200);
   rudderPID.setTimeStep(200);
   throttlePID.setTimeStep(200);
+  pinMode(buttonAuto, INPUT);
+  pinMode(buttonFwd, INPUT);
+  pinMode(buttonBkd, INPUT);
+  pinMode(buttonLeft, INPUT);
+  pinMode(buttonRight, INPUT);
 }
 
 void loop(){
-  readSerialCmd();
+  readButtonsState();  
+  if (buttonAutoState == HIGH){
+    readSerialCmd();
+    
+    rudderPID.run();
+    limitDriverCmd(rudderDriverVel);
+    md.setM1Speed(rudderDriverVel);
   
-  rudderPID.run();
-  limitDriverCmd(rudderDriverVel);
-  md.setM1Speed(rudderDriverVel);
+    throttlePID.run();
+    limitDriverCmd(throttleDriverVel);
+    printData_throttle();
+    md.setM2Speed(throttleDriverVel);
+  } else {
+    executeButtons();
+  }
+}
 
-  throttlePID.run();
-  limitDriverCmd(throttleDriverVel);
-  printData_throttle();
-  md.setM2Speed(throttleDriverVel);
+void readButtonsState(){
+  buttonAutoState = digitalRead(buttonAuto);
+  buttonFwdState = digitalRead(buttonFwd);
+  buttonBkdState = digitalRead(buttonBkd);
+  buttonLeftState = digitalRead(buttonLeft);
+  buttonRightState = digitalRead(buttonRight);
+}
+
+void executeButtons(){
+  if (buttonFwdState == HIGH){
+    md.setM2Speed(100);
+  } else {
+    md.setM2Speed(0);
+  }
+  if (buttonBkdState == HIGH){
+    md.setM2Speed(-100);
+  } else {
+    md.setM2Speed(0);
+  }
+  if (buttonLeftState == HIGH){
+    md.setM1Speed(200);
+  } else {
+    md.setM1Speed(0);
+  }
+  if (buttonRightState == HIGH){
+    md.setM1Speed(-200);
+  } else {
+    md.setM1Speed(0);
+  }
 }
 
 void readSerialCmd(){
